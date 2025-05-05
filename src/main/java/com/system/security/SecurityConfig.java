@@ -3,6 +3,7 @@ package com.system.security;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -33,6 +34,11 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/api/v1/auth/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/api/v1/students").hasRole("ADMIN")
+                            .requestMatchers(HttpMethod.PUT, "/api/v1/students/**").hasRole("ADMIN")
+                            .requestMatchers(HttpMethod.DELETE, "/api/v1/students/**").hasRole("ADMIN")
+                            .requestMatchers(HttpMethod.GET, "/api/v1/students").authenticated()
+                            .requestMatchers(HttpMethod.GET, "/api/v1/students/**").authenticated()
                             .anyRequest().authenticated();
                 }).addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthEntryPoint));

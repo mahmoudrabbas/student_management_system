@@ -3,7 +3,6 @@ package com.system.controller;
 import com.system.dto.LoginRequest;
 import com.system.dto.RefreshRequest;
 import com.system.entity.User;
-import com.system.security.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
