@@ -65,7 +65,9 @@ public class AuthService {
 
 
     public void logout(RefreshRequest refreshRequest){
-        System.out.println(refreshRequest.getRefreshToken());
+        if(jwtTokenProvider.isRefreshToken(refreshRequest.getRefreshToken()))
+            throw new ResourceNotFoundException("Expected Refresh Token");
+
         if(tokenRepository.findByToken(refreshRequest.getRefreshToken()).isPresent()){
             tokenRepository.deleteByToken(refreshRequest.getRefreshToken());
         }else {
@@ -75,6 +77,8 @@ public class AuthService {
 
     public TokenResponse refreshAccess(RefreshRequest refreshToken){
 
+        if(jwtTokenProvider.isRefreshToken(refreshToken.getRefreshToken()))
+            throw new ResourceNotFoundException("Expected Refresh Token");
         RefreshToken refreshedTokenFromDB = tokenRepository.findByToken(refreshToken.getRefreshToken()).get();
 
         System.out.println(refreshToken.getRefreshToken());

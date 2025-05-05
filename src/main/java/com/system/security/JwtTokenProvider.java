@@ -1,16 +1,8 @@
 package com.system.security;
 
-import com.system.entity.RefreshToken;
-import com.system.entity.User;
-import com.system.exception.ResourceNotFoundException;
-import com.system.repository.RefreshTokenRepository;
-import com.system.repository.UserRepository;
 import io.jsonwebtoken.security.Keys;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
 import io.jsonwebtoken.*;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +17,9 @@ public class JwtTokenProvider {
     private final SecretKey key;
     private final long accessTokenExpiration;
     private final long refreshTokenExpiration;
+    private final String ACCESS_TYPE = "ACCESS";
+    private final String REFRESH_TYPE = "REFRESH";
+
 //    private final UserRepository userRepository;
 //    private final RefreshTokenRepository refreshTokenRepository;
 
@@ -45,30 +40,47 @@ public class JwtTokenProvider {
     }
 
 
-    public String generateToken(Authentication authentication, long exp){
+    public String generateToken(Authentication authentication, long exp, String tokenType){
         String username = authentication.getName();
         return Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + exp))
                 .signWith(key,SignatureAlgorithm.HS256)
+                .claim("type", tokenType)
                 .compact();
     }
 
+    public boolean isRefreshToken(String token){
+        System.out.println("s");
+        return !extractClaim(token, claims -> claims.get("type", String.class)).equals(ACCESS_TYPE);
+    }
+
+    public boolean isAccessToken(String token){
+        return !extractClaim(token, claims -> claims.get("type", String.class)).equals(REFRESH_TYPE);
+    }
+
+
     public String generateAccessToken(Authentication authentication){
-        return generateToken(authentication, accessTokenExpiration);
+        return generateToken(authentication, accessTokenExpiration, ACCESS_TYPE);
     }
 
     public String generateRefreshToken(Authentication authentication){
-        return generateToken(authentication, refreshTokenExpiration);
+        return generateToken(authentication, refreshTokenExpiration, REFRESH_TYPE);
     }
 
     private Claims extractClaimsFromJwt(String token){
+        if (token == null || token.trim().isEmpty()) {
+            throw new IllegalArgumentException("Token cannot be null or empty");
+        }
         return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
     }
 
     private <T> T extractClaim(String token, Function<Claims, T> resolver){
         Claims claims = extractClaimsFromJwt(token);
+        if (claims == null) {
+            throw new IllegalArgumentException("Claims are null for token");
+        }
         return resolver.apply(claims);
     }
 
@@ -81,20 +93,6 @@ public class JwtTokenProvider {
     }
 
     public boolean isValidToken(String token){
-//        String username = extractUsername(token);
-//        User user = userRepository.findByUsername(username)
-//                .orElseThrow(() -> new ResourceNotFoundException("User Not Found"));
-//
-//        if(!refreshTokenRepository.findByUserId(user.getId()).isPresent()){
-//            return false;
-//        }
-//        RefreshToken refreshToken = refreshTokenRepository.findByUserId(user.getId()).get();
-//
-//        if(extractExpiration(refreshToken.getToken()).before(new Date())){
-//            return false;
-//        }
-
-
         try {
             return !extractExpiration(token).before(new Date());
         }catch (JwtException | IllegalArgumentException e){
