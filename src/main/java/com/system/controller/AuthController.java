@@ -1,6 +1,7 @@
 package com.system.controller;
 
 import com.system.dto.LoginRequest;
+import com.system.dto.RefreshRequest;
 import com.system.entity.User;
 import com.system.security.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,5 +34,24 @@ public class AuthController {
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request){
         return ResponseEntity.ok().body(authService.login(request));
     }
+
+    @Operation(summary = "logout", description = "log out from system")
+    @ApiResponse(responseCode = "204", description = "Successfully logged out")
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(@RequestBody RefreshRequest refreshToken){
+        authService.logout(refreshToken);
+        return ResponseEntity.ok().body("Successfully Logged out");
+    }
+
+    @Operation(summary = "refresh Token", description = "refresh new Access token")
+    @ApiResponse(responseCode = "200", description = "refresh the access token")
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refresh(@RequestBody RefreshRequest refreshToken){
+        return ResponseEntity.ok().body(authService.refreshAccess(refreshToken));
+    }
+
+
+
+
 
 }

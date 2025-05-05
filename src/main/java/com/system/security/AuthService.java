@@ -1,12 +1,14 @@
 package com.system.security;
 
 import com.system.dto.LoginRequest;
+import com.system.dto.RefreshRequest;
 import com.system.dto.TokenResponse;
 import com.system.entity.RefreshToken;
 import com.system.entity.User;
 import com.system.exception.ResourceNotFoundException;
 import com.system.repository.RefreshTokenRepository;
 import com.system.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -19,6 +21,7 @@ import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
@@ -61,15 +64,38 @@ public class AuthService {
     }
 
 
-    public void logout(String token){
-        if(tokenRepository.findByToken(token).isPresent()){
-            tokenRepository.deleteByToken(token);
+    public void logout(RefreshRequest refreshRequest){
+        System.out.println(refreshRequest.getRefreshToken());
+        if(tokenRepository.findByToken(refreshRequest.getRefreshToken()).isPresent()){
+            tokenRepository.deleteByToken(refreshRequest.getRefreshToken());
         }else {
             throw new ResourceNotFoundException("You Already Signed Out");
         }
     }
 
-    public TokenResponse refreshAccess(String refreshToken){
+    public TokenResponse refreshAccess(RefreshRequest refreshToken){
+
+        RefreshToken refreshedTokenFromDB = tokenRepository.findByToken(refreshToken.getRefreshToken()).get();
+
+        System.out.println(refreshToken.getRefreshToken());
+        if(!jwtTokenProvider.isValidToken(refreshToken.getRefreshToken())){
+            tokenRepository.delete(refreshedTokenFromDB);
+            throw new ResourceNotFoundException("You are Already signed out, Please Login again");
+        }
+
+
+        String username = jwtTokenProvider.extractUsername(refreshToken.getRefreshToken());
+        User user = userRepository.findByUsername(username).get();
+
+        Authentication authentication = new UsernamePasswordAuthenticationToken(username, null, null);
+
+        String accessToken = jwtTokenProvider.generateAccessToken(authentication);
+        String newRefreshToken = jwtTokenProvider.generateRefreshToken(authentication);
+        tokenRepository.delete(refreshedTokenFromDB);
+        tokenRepository.flush();
+        saveRefreshToken(user, newRefreshToken);
+
+        return new TokenResponse(accessToken, newRefreshToken);
 
     }
 }
