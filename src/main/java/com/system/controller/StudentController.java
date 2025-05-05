@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -42,6 +43,7 @@ public class StudentController {
 
     @Operation(summary = "insert student", description = "insert one student record from db")
     @ApiResponse(responseCode = "201", description = "inserted student successfully")
+//    @PreAuthorize()
     @PostMapping
     public ResponseEntity<?> insert(@RequestBody StudentDTO studentDTO){
         System.out.println(studentDTO);

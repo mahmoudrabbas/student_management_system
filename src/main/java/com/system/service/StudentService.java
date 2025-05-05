@@ -6,13 +6,15 @@ import com.system.exception.ResourceNotFoundException;
 import com.system.repository.StudentRepository;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,9 +23,11 @@ import java.util.stream.Collectors;
 public class StudentService {
     private final StudentRepository studentRepository;
     private final ModelMapper modelMapper;
+    private static final Logger logger = LoggerFactory.getLogger(StudentService.class);
 
     @Cacheable("students")
     public List<StudentDTO> getAll(){
+        logger.info("returning all students");
         return studentRepository.findAll()
                 .stream().map(student ->{
                     return new StudentDTO(student.getId(),
@@ -36,16 +40,17 @@ public class StudentService {
 
     @Cacheable(value = "student", key = "#id")
     public StudentDTO getById(Long id){
+        logger.info("returning a student with id {}", id);
         return modelMapper.map(studentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student Is Not Found To Show")), StudentDTO.class);
     }
 
     @CacheEvict(value = "students", allEntries = true)
+    @PreAuthorize("hasRole('ADMIN')")
     public StudentDTO insert(StudentDTO dto){
-        System.out.println(dto);
+        logger.info("new student {}", dto.getFirstName()+" "+ dto.getLastName());
         Student student = modelMapper.map(dto, Student.class);
         student.setEmail(dto.getEmail());
-        System.out.println(student);
         studentRepository.save(student);
         return dto;
     }
@@ -58,7 +63,9 @@ public class StudentService {
                     @CacheEvict(value = "students", allEntries = true)
             }
     )
+    @PreAuthorize("hasRole('ADMIN')")
     public StudentDTO update(Long id, StudentDTO dto){
+        logger.info("update student with id {} and name {}", id, dto.getFirstName()+" "+ dto.getLastName());
         Student student = studentRepository.findById(dto.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Student Is Not Found To Update"));
 
@@ -72,7 +79,9 @@ public class StudentService {
 
 
     @CacheEvict(value = {"students","student"}, allEntries = true)
+    @PreAuthorize("hasRole('ADMIN')")
     public int delete(Long id){
+        logger.info("delete student with id {}", id);
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student Is Not Found To Delete"));
         studentRepository.delete(student);
