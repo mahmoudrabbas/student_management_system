@@ -1,6 +1,8 @@
 package com.system.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.system.config.SanitizingDeserializer;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
@@ -14,7 +16,9 @@ import java.time.LocalDateTime;
 public class StudentDTO implements Serializable {
     private Long id;
     @NotBlank(message = "First Name Is Required")
+    @JsonDeserialize(using = SanitizingDeserializer.class)
     private String firstName;
+    @JsonDeserialize(using = SanitizingDeserializer.class)
     @NotBlank(message = "Last Name Is Required")
     private String lastName;
 
