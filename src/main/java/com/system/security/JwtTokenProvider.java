@@ -70,9 +70,6 @@ public class JwtTokenProvider {
     }
 
     private Claims extractClaimsFromJwt(String token){
-        if (token == null || token.trim().isEmpty()) {
-            throw new IllegalArgumentException("Token cannot be null or empty");
-        }
         return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
     }
 
@@ -93,11 +90,7 @@ public class JwtTokenProvider {
     }
 
     public boolean isValidToken(String token){
-        try {
-            return !extractExpiration(token).before(new Date());
-        }catch (JwtException | IllegalArgumentException e){
-            return false;
-        }
+        return !extractExpiration(token).before(new Date());
     }
 
 

@@ -1,6 +1,8 @@
 package com.system.security;
 
 import com.system.exception.ResourceNotFoundException;
+
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,23 +31,30 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
+
         if(authHeader!=null && authHeader.startsWith("Bearer")) {
+
             String token = authHeader.substring(7);
-            if (!jwtTokenProvider.isAccessToken(token)) throw new ResourceNotFoundException("Expected Access Token");
-            if (token != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                String username = jwtTokenProvider.extractUsername(token);
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                if (jwtTokenProvider.isValidToken(token)) {
-                    UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                            userDetails, null, userDetails.getAuthorities()
-                    );
+            try {
+                if (!jwtTokenProvider.isAccessToken(token)) throw new ResourceNotFoundException("Expected Access Token");
+                if (token != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    String username = jwtTokenProvider.extractUsername(token);
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                    if (jwtTokenProvider.isValidToken(token)) {
+                        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                                userDetails, null, userDetails.getAuthorities()
+                        );
 
-                    auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                    SecurityContextHolder.getContext().setAuthentication(auth);
+                        SecurityContextHolder.getContext().setAuthentication(auth);
+                    }else{
+                        throw new ResourceNotFoundException("Invalid Token");
+                    }
                 }
+            }catch(ExpiredJwtException ex){
+                throw new ResourceNotFoundException("Invalid Token please go login in or refresh ur token");
             }
-
         }
         filterChain.doFilter(request, response);
     }
