@@ -1,6 +1,5 @@
 package com.system.dto;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.system.config.SanitizingDeserializer;
 import jakarta.validation.constraints.Email;
@@ -8,7 +7,6 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
