@@ -48,7 +48,7 @@ public class AuthService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User Not Found"));
 
-        logger.info("Refresh Token Generated And Saved For User {}",request.getUsername());
+        logger.info("Refresh Token Generated And Saved For User LOGGER LOGGER {}",request.getUsername());
         saveRefreshToken(user, refreshToken);
 
         return new TokenResponse(accessToken,refreshToken);
